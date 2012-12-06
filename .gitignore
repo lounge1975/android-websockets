@@ -1,2 +1,12 @@
 gen/
 local.properties
+*~
+target
+.settings
+.project
+.classpath
+bin
+
+/doc
+jar/*
+.DS_Store
