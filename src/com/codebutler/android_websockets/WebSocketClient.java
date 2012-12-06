@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.net.SocketException;
 import java.net.URI;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
@@ -27,6 +28,7 @@ import java.util.List;
 
 public class WebSocketClient {
     private static final String TAG = "WebSocketClient";
+    private static final boolean D = false;
 
     private URI                      mURI;
     private Listener                 mListener;
@@ -123,15 +125,18 @@ public class WebSocketClient {
                     mParser.start(stream);
 
                 } catch (EOFException ex) {
-                    Log.d(TAG, "WebSocket EOF!", ex);
+                    if(D) Log.d(TAG, "WebSocket EOF!", ex);
                     mListener.onDisconnect(0, "EOF");
 
                 } catch (SSLException ex) {
                     // Connection reset by peer
-                    Log.d(TAG, "Websocket SSL error!", ex);
+                    if(D) Log.d(TAG, "Websocket SSL error!", ex);
                     mListener.onDisconnect(0, "SSL");
 
+                } catch (SocketException sex) {
+//                    mListener.onError(sex);
                 } catch (Exception ex) {
+                    if(D) Log.d(TAG, "+++ run +++ ex:"+ex);
                     mListener.onError(ex);
                 }
             }
@@ -141,14 +146,18 @@ public class WebSocketClient {
 
     public void disconnect() {
         if (mSocket != null) {
+            
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
                     try {
                         mSocket.close();
                         mSocket = null;
+                        
+                        mHandlerThread.getLooper().quit();
+
                     } catch (IOException ex) {
-                        Log.d(TAG, "Error while disconnecting", ex);
+                        if(D) Log.d(TAG, "Error while disconnecting", ex);
                         mListener.onError(ex);
                     }
                 }
@@ -214,6 +223,7 @@ public class WebSocketClient {
                         outputStream.flush();
                     }
                 } catch (IOException e) {
+                    if(D) Log.d(TAG, "+++ sendFrame +++ e:"+e);
                     mListener.onError(e);
                 }
             }
